@@ -120,27 +120,39 @@ export async function getSummary(req: Request, res: Response) {
     }
   }
 
-  // 6) Build company cards (nutritionist sees only companies they touch, after filters)
-  const cards = companies
-    .filter(c => (user?.role === "admin" ? true : byCompany.has(c.company_id)))
-    .map(c => {
-      const bc = byCompany.get(c.company_id) ?? { done:0, pending:0, reached_out:0, overdue:0, clients:new Set<number>() };
-      const total_clients = clientsCountByCompany.get(c.company_id) ?? 0;
-      const denom = bc.done + bc.pending;
-      const completion_pct = denom > 0 ? Math.round((bc.done / denom) * 100) : 0;
+  // 6) Build company cards
+// Hide companies that have no matches ONLY when filters are applied.
+// Admin with no filters: see all companies. Nutritionists: always scoped to their own matches.
+const filtersActive =
+  (wantStatus !== "all") ||
+  !!from ||
+  !!to ||
+  (user?.role === "admin" && !!(nutritionist?.trim()));
 
-      return {
-        company_id: c.company_id,
-        name: c.name,
-        total_clients,
-        done: bc.done,
-        pending: bc.pending,
-        reached_out: bc.reached_out,
-        overdue: bc.overdue,
-        completion_pct,
-      };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
+// Admin + no filters -> show all companies; otherwise only those with matches
+const showAllCompanies = (user?.role === "admin") && !filtersActive;
+
+const cards = (showAllCompanies ? companies : companies.filter(c => byCompany.has(c.company_id)))
+  .map(c => {
+    const base: ByCompany = { done: 0, pending: 0, reached_out: 0, overdue: 0, clients: new Set<number>() };
+    const bc = byCompany.get(c.company_id) ?? base;               // when showing all, fill zeros
+    const total_clients = clientsCountByCompany.get(c.company_id) ?? 0;
+    const denom = bc.done + bc.pending;
+    const completion_pct = denom > 0 ? Math.round((bc.done / denom) * 100) : 0;
+
+    return {
+      company_id: c.company_id,
+      name: c.name,
+      total_clients,
+      done: bc.done,
+      pending: bc.pending,
+      reached_out: bc.reached_out,
+      overdue: bc.overdue,
+      completion_pct,
+    };
+  })
+  .sort((a, b) => a.name.localeCompare(b.name));
+
 
   // 7) Totals for stat cards — derive from `cards` so UI and totals always match
 const totals_total_clients = cards.reduce((s, x) => s + (x.total_clients || 0), 0);

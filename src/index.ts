@@ -7,7 +7,13 @@ import router from "./routes";  // ⬅ no .js
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({
+  origin: [
+    "http://localhost:5173",                 // dev
+    "https://staging.captivateprojects.com"  // your frontend on cPanel
+  ],
+  credentials: true
+}));
 app.use(express.json());
 app.use(morgan("dev"));
 
