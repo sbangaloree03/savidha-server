@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { requireAuth, requireRole } from "../utils/auth";
+import {  requireRole } from "../utils/auth";
 import { getSummary } from "../controllers/summary";
 import { listCompanyClients, updateClient, deleteClient } from "../controllers/clients";
 import { createFollowup, updateFollowupStatus } from "../controllers/followups";
 import { login, register } from "../controllers/auth";
 import { getCalendar } from "../controllers/calendar";
+import { createNewClient } from "../controllers/newclients";
+import { requireAuth } from "../utils/auth";
 
 const r = Router();
 
@@ -24,5 +26,5 @@ r.delete("/clients/:clientId", requireAuth, requireRole("admin"), deleteClient);
 
 // calendar
 r.get("/calendar", requireAuth, getCalendar);
-
+r.post("/newclients", requireAuth, createNewClient);
 export default r;
