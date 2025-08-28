@@ -7,6 +7,7 @@ import { login, register } from "../controllers/auth";
 import { getCalendar } from "../controllers/calendar";
 import { createNewClient } from "../controllers/newclients";
 import { requireAuth } from "../utils/auth";
+import { getClientProfile, updateClientIntake } from "../controllers/profile";
 
 const r = Router();
 
@@ -23,7 +24,8 @@ r.patch("/followups/:id/status", requireAuth, updateFollowupStatus);
 // client CRUD (admin only)
 r.put("/clients/:clientId", requireAuth, requireRole("admin"), updateClient);
 r.delete("/clients/:clientId", requireAuth, requireRole("admin"), deleteClient);
-
+r.get("/companies/:companyId/clients/:clientId/profile", requireAuth, getClientProfile);
+r.patch("/companies/:companyId/clients/:clientId/intake",  requireAuth, updateClientIntake); // ← NEW
 // calendar
 r.get("/calendar", requireAuth, getCalendar);
 r.post("/newclients", requireAuth, createNewClient);
