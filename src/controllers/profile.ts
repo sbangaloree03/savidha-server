@@ -146,3 +146,28 @@ export async function updateClientIntake(req: Request, res: Response) {
     res.status(500).json({ error: e?.message || "Failed to save intake" });
   }
 }
+export async function getClientHome(req: Request, res: Response) {
+  try {
+    const user = (req as any).user as { sub: string; role: string; name: string; email: string };
+    if (user?.role !== "client") return res.status(403).json({ error: "Forbidden" });
+
+    const Users = mongoose.connection.collection("users");
+    const me = await Users.findOne({ _id: new mongoose.Types.ObjectId(user.sub) });
+
+    let client = null;
+    if (me?.client_id) {
+      client = await Clients.findOne(
+        { client_id: me.client_id },
+        { projection: { _id: 0 } }
+      );
+    }
+
+    return res.json({
+      user: { name: me?.name, email: me?.email, client_id: me?.client_id, company_id: me?.company_id },
+      client,
+    });
+  } catch (e:any) {
+    console.error(e);
+    return res.status(500).json({ error: e?.message || "Failed to load client home" });
+  }
+}

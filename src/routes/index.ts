@@ -7,7 +7,9 @@ import { login, register } from "../controllers/auth";
 import { getCalendar } from "../controllers/calendar";
 import { createNewClient } from "../controllers/newclients";
 import { requireAuth } from "../utils/auth";
-import { getClientProfile, updateClientIntake } from "../controllers/profile";
+import { getClientProfile, updateClientIntake, getClientHome } from "../controllers/profile"; // ← add getClientHome
+import { createFormData, getMyLatestFormData } from "../controllers/formdata";
+
 
 const r = Router();
 
@@ -29,4 +31,7 @@ r.patch("/companies/:companyId/clients/:clientId/intake",  requireAuth, updateCl
 // calendar
 r.get("/calendar", requireAuth, getCalendar);
 r.post("/newclients", requireAuth, createNewClient);
+r.get("/client/home", requireAuth, getClientHome);
+r.post("/formdata", requireAuth, createFormData);
+r.post("/formdata/mine/latest", requireAuth, getMyLatestFormData);
 export default r;
