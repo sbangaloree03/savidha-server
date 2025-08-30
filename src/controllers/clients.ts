@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import Client from "../models/Client";
 
 const Clients = mongoose.connection.collection("clients");
 const Companies = mongoose.connection.collection("companies");
@@ -152,4 +153,15 @@ export async function deleteClient(req: Request, res: Response) {
   await Followups.deleteMany({ client_id: clientId });
 
   res.json({ ok: true, deleted_client_id: clientId });
+}
+/** List ALL clients across companies (for staff directory) */
+export async function listAllClients(req: Request, res: Response) {
+  try {
+    const Clients = mongoose.connection.collection("clients");
+    const docs = await Clients.find({}).sort({ company_id: 1, name: 1 }).toArray();
+    return res.json({ clients: docs });
+  } catch (e: any) {
+    console.error(e);
+    return res.status(500).json({ error: e?.message || "Failed to fetch clients" });
+  }
 }
