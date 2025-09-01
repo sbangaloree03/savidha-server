@@ -101,12 +101,13 @@ export async function listCompanyClients(req: Request, res: Response) {
 }
 
 // -----------------------------------------------------------------------------
-// UPDATE client (admin only)
+// UPDATE client (admin or nutritionist with restricted fields)
 // -----------------------------------------------------------------------------
 export async function updateClient(req: Request, res: Response) {
   const clientId = Number(req.params.clientId);
+  const user = (req as any).user as { role: "admin" | "nutritionist"; name: string };
 
-  const allowed = [
+  const adminAllowed = [
     "name",
     "contact_info",
     "age",
@@ -119,6 +120,17 @@ export async function updateClient(req: Request, res: Response) {
     "given_plan",
     "notes",
   ] as const;
+
+  const nutriAllowed = [
+    "assigned_nutritionist",
+    "requirements",
+    "present_readings",
+    "next_target",
+    "given_plan",
+    "notes",
+  ] as const;
+
+  const allowed = user?.role === "admin" ? adminAllowed : nutriAllowed;
 
   const $set: Record<string, any> = {};
   for (const k of allowed) {

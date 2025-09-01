@@ -208,3 +208,67 @@ export async function createNewClient(req: Request, res: Response) {
     return res.status(500).json({ error: e?.message || "Failed to create client" });
   }
 }
+// --- below your existing imports/consts & createNewClient() ---
+
+/** Update an intake row (admin + nutritionist) */
+export async function updateNewClient(req: Request, res: Response) {
+  const id = Number(req.params.clientId);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Bad clientId" });
+
+  // limit which fields are editable through this route
+  const editable: Array<
+    | "name" | "contact_info" | "age"
+    | "medical_history" | "current_condition"
+    | "assigned_nutritionist" | "first_followup_at"
+    | "status" | "requirements" | "present_readings"
+    | "next_target" | "given_plan" | "notes"
+  > = [
+    "name","contact_info","age","medical_history","current_condition",
+    "assigned_nutritionist","first_followup_at","status",
+    "requirements","present_readings","next_target","given_plan","notes",
+  ];
+
+  const $set: Record<string, any> = { updated_at: new Date() };
+
+  for (const k of editable) {
+    if (req.body[k] !== undefined) {
+      if (k === "age") $set[k] = toNumOrUndef(req.body[k]);
+      else if (k === "first_followup_at") $set[k] = toDateOrUndef(req.body[k]);
+      else $set[k] = req.body[k];
+    }
+  }
+
+  const updated = await NewClients.findOneAndUpdate(
+    { client_id: id },
+    { $set },
+    { returnDocument: "after" } as any
+  );
+  if (!updated?.value) return res.status(404).json({ error: "Intake client not found" });
+
+  // keep core fields in master clients in sync (light touch)
+  const sync: Record<string, any> = {};
+  if ($set.name !== undefined) sync.name = $set.name;
+  if ($set.contact_info !== undefined) sync.contact_info = $set.contact_info;
+  if ($set.age !== undefined) sync.age = $set.age;
+  if ($set.medical_history !== undefined) sync.medical_history = $set.medical_history;
+  if ($set.current_condition !== undefined) sync.current_condition = $set.current_condition;
+  if ($set.assigned_nutritionist !== undefined) sync.assigned_nutritionist = $set.assigned_nutritionist;
+  if (Object.keys(sync).length) {
+    await Clients.updateOne({ client_id: id }, { $set: sync });
+  }
+
+  return res.json({ ok: true, client: updated.value });
+}
+
+/** Delete an intake row (admin only) */
+export async function deleteNewClient(req: Request, res: Response) {
+  const id = Number(req.params.clientId);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Bad clientId" });
+
+  const doc = await NewClients.findOne({ client_id: id });
+  if (!doc) return res.status(404).json({ error: "Intake client not found" });
+
+  await NewClients.deleteOne({ client_id: id });
+  // Do NOT delete from master clients/followups here (intake record removal only).
+  return res.json({ ok: true, deleted_client_id: id });
+}
