@@ -12,10 +12,14 @@
 
   app.use(cors({
     origin: [
-      "http://localhost:5173",                 // dev
-      "https://staging.captivateprojects.com",
-      "http://savidhawellness.in/"  // your frontend on cPanel
-    ],
+  "http://localhost:5173",
+  "https://staging.captivateprojects.com",
+  "http://savidhawellness.in",            // ← no trailing slash
+  "https://savidhawellness.in",           // add https too
+  "https://www.savidhawellness.in",       // and www variants
+  "http://www.savidhawellness.in"
+],
+
     credentials: true
   }));
   app.use(express.json({ limit: "1mb" })); // <<< REQUIRED
@@ -31,4 +35,5 @@
     
   }
   start();
+
 
